@@ -1,4 +1,4 @@
-import std/[httpclient, sequtils, unicode, strbasics, json], parsetoml, system, strutils, cligen
+import std/[httpclient, sequtils, unicode, strbasics, json, files], parsetoml, system, strutils, cligen
 
 
 var webClient = newHttpClient()
@@ -9,7 +9,9 @@ var
 
 var 
   sites: seq[string]
+  list2: seq[string] #todo: More then 2 lists
   
+
 
 proc onionJsFixer(line:string): string =
 
@@ -106,19 +108,16 @@ proc doodlering(ring: TomlValueRef): seq[string] =
     if magic:
       if "];" in line:
         return sites
-      
       elif not line.strip.startsWith("//"):
         sites.addUnique(DoodleStripper(line))
-        
-
-
 
     if not magic:
       if "var sites = [" in line:
         magic = true
+      elif "let sites = [" in line:
+        magic = true
 
-
-
+  echo sites
 
 
 
@@ -142,11 +141,29 @@ proc webringParser(configFile: string, output = "./sites.json") =
     else:
       echo "[system] [ERROR] Couldn't find parser '" & parser & "' requested by ring '" & webring["name"].getStr & "'"
 
-    for value in parserret:
-      sites.addUnique(value)
-      
-  echo "\n------------------\nGevonden Sites:\n------------------"
-  echo sites
+
+    if not webring{"list2"}.getBool:
+      for value in parserret:
+        sites.addUnique(value)
+    else:
+      for value in parserret:
+        list2.addUnique(value)
+
+  writeFile(output, pretty(%* {
+    "sites": sites,
+    "list2": list2
+  }.toTable))
+
+  echo "Sites uitgeput naar" & output
+
+
+
+
+
+
+
+
+
 
 
 
@@ -154,7 +171,7 @@ proc webringParser(configFile: string, output = "./sites.json") =
 dispatch webringParser
 
   
-  
+
 
 
 
