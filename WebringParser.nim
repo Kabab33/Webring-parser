@@ -117,8 +117,6 @@ proc doodlering(ring: TomlValueRef): seq[string] =
       elif "let sites = [" in line:
         magic = true
 
-  echo sites
-
 
 
 
