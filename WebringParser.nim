@@ -1,4 +1,4 @@
-import std/[httpclient, sequtils, unicode, strbasics, json, files], parsetoml, system, strutils, cligen
+import std/[httpclient, sequtils, unicode, strbasics, json, files, uri], parsetoml, system, strutils, cligen
 
 
 var webClient = newHttpClient()
@@ -33,7 +33,11 @@ proc DoodleStripper(line:string): string =
 
   return stripedLine.split(",")[0].strip(chars = {'"'})
 
+proc urlValidator(url:string): string = 
+  var x = parseUri(url)
 
+  if (x.scheme == "http" or x.scheme == "https") and x.isAbsolute:
+    result = x.scheme & "://" & x.hostname
 
 # Parsers
 
@@ -43,7 +47,7 @@ proc baccyJSON(ring: TomlValueRef): seq[string] = # dit is gewoon de generic jso
 
   echo "[baccyJSON] Downloading Ring " & ring["name"].getStr & " from " & ring["url"].getStr
 
-  # tbh heb ik geen zin om het async maken, maar met hoe grooter dit gaat zijn is het wel handiger om het zo te doen.
+  # tbh heb ik geen zin om het async maken, maar met hoe groot dit gaat zijn is het wel handiger om het zo te doen.
 
   let ringJson = parsejson(webClient.getContent(url))
 
@@ -142,10 +146,13 @@ proc webringParser(configFile: string, output = "./sites.json") =
 
     if not webring{"list2"}.getBool:
       for value in parserret:
-        sites.addUnique(value)
+        sites.addUnique(urlValidator(value))
     else:
       for value in parserret:
-        list2.addUnique(value)
+        list2.addUnique(urlValidator(value))
+
+
+
 
   writeFile(output, pretty(%* {
     "sites": sites,
